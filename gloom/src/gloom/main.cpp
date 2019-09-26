@@ -10,6 +10,7 @@
 #include <cstdlib>
 
 
+
 // A callback which allows GLFW to report errors whenever they occur
 static void glfwErrorCallback(int error, const char *description)
 {
