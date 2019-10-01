@@ -21,6 +21,8 @@
 
 //Declaring the createVAO function here, and defining it below. 
 int createVertexArrayObject(std::vector<float> vertices, int vertex_size, std::vector<unsigned int> indices,int indices_size, std::vector<float> colour,int colour_size, std::vector<float> normal ,int normal_size );
+
+//Declaring the drawSceneNode function here, and defining it below. 
 void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix);
 
 
@@ -43,6 +45,7 @@ unsigned int lengthOfHelicopterMainRoter = 0;
 
 void runProgram(GLFWwindow* window)
 {
+    //Creates the nodes og all the helicopter parts, terrain and a root
     SceneNode* root = createSceneNode(); 
     SceneNode* terrainNode = createSceneNode();
     SceneNode* heliBodyNode = createSceneNode();
@@ -50,27 +53,32 @@ void runProgram(GLFWwindow* window)
     SceneNode* heliMainRotorNode = createSceneNode();
     SceneNode* heliDoorNode = createSceneNode();
     
+    //Add helicopter body as parent of the other parts, tarrain parent of helicopter body, and root parent of terrain
     addChild(root, terrainNode);
     addChild(terrainNode, heliBodyNode);
     addChild(heliBodyNode, heliDoorNode);
     addChild(heliBodyNode, heliTailNode);
     addChild(heliBodyNode, heliMainRotorNode);
 
-   //Creates VAO for terrain
+   //Load terrain and set the VAO ID and VAOIndexCount for the terrain node 
     struct Mesh TerrainObj = loadTerrainMesh("../gloom/resources/lunarsurface.obj");
     terrainNode->vertexArrayObjectID = createVertexArrayObject(TerrainObj.vertices, TerrainObj.vertices.size(), TerrainObj.indices, TerrainObj.indices.size(), TerrainObj.colours, TerrainObj.colours.size(), TerrainObj.normals, TerrainObj.normals.size());
-    
+    terrainNode->VAOIndexCount = TerrainObj.indices.size();
+
+   //Load helicopter and set the VAO ID and VAOIndexCount for the helicopter-part nodes 
     struct Helicopter HelicopterObj  = loadHelicopterModel("../gloom/resources/helicopter.obj");
     heliDoorNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.door.vertices, HelicopterObj.door.vertices.size(), HelicopterObj.door.indices, HelicopterObj.door.indices.size(), HelicopterObj.door.colours, HelicopterObj.door.colours.size(), HelicopterObj.door.normals, HelicopterObj.door.normals.size());
-    heliBodyNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.body.vertices, HelicopterObj.body.vertices.size(), HelicopterObj.body.indices, HelicopterObj.body.indices.size(), HelicopterObj.body.colours, HelicopterObj.body.colours.size(), HelicopterObj.body.normals, HelicopterObj.body.normals.size());
-    heliMainRotorNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.mainRotor.vertices, HelicopterObj.mainRotor.vertices.size(), HelicopterObj.mainRotor.indices, HelicopterObj.mainRotor.indices.size(), HelicopterObj.mainRotor.colours, HelicopterObj.mainRotor.colours.size(), HelicopterObj.mainRotor.normals, HelicopterObj.mainRotor.normals.size());
-    heliTailNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.tailRotor.vertices, HelicopterObj.tailRotor.vertices.size(), HelicopterObj.tailRotor.indices, HelicopterObj.tailRotor.indices.size(), HelicopterObj.tailRotor.colours, HelicopterObj.tailRotor.colours.size(), HelicopterObj.tailRotor.normals, HelicopterObj.tailRotor.normals.size());
-
-    terrainNode->VAOIndexCount = TerrainObj.indices.size();
-    heliBodyNode->VAOIndexCount = HelicopterObj.body.indices.size();
-    heliMainRotorNode->VAOIndexCount = HelicopterObj.mainRotor.indices.size();
-    heliTailNode->VAOIndexCount = HelicopterObj.tailRotor.indices.size();
     heliDoorNode->VAOIndexCount = HelicopterObj.door.indices.size();
+    
+    heliBodyNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.body.vertices, HelicopterObj.body.vertices.size(), HelicopterObj.body.indices, HelicopterObj.body.indices.size(), HelicopterObj.body.colours, HelicopterObj.body.colours.size(), HelicopterObj.body.normals, HelicopterObj.body.normals.size());
+    heliBodyNode->VAOIndexCount = HelicopterObj.body.indices.size();
+
+    heliMainRotorNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.mainRotor.vertices, HelicopterObj.mainRotor.vertices.size(), HelicopterObj.mainRotor.indices, HelicopterObj.mainRotor.indices.size(), HelicopterObj.mainRotor.colours, HelicopterObj.mainRotor.colours.size(), HelicopterObj.mainRotor.normals, HelicopterObj.mainRotor.normals.size());
+    heliMainRotorNode->VAOIndexCount = HelicopterObj.mainRotor.indices.size();
+
+    heliTailNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.tailRotor.vertices, HelicopterObj.tailRotor.vertices.size(), HelicopterObj.tailRotor.indices, HelicopterObj.tailRotor.indices.size(), HelicopterObj.tailRotor.colours, HelicopterObj.tailRotor.colours.size(), HelicopterObj.tailRotor.normals, HelicopterObj.tailRotor.normals.size());
+    heliTailNode->VAOIndexCount = HelicopterObj.tailRotor.indices.size();
+
 
     printNode(root);
     printNode(terrainNode);
@@ -78,7 +86,6 @@ void runProgram(GLFWwindow* window)
     printNode(heliTailNode);
     printNode(heliMainRotorNode);
     printNode(heliDoorNode);
-
 
     // Enable depth (Z) buffer (accept "closest" fragment)
     glEnable(GL_DEPTH_TEST);
@@ -89,6 +96,14 @@ void runProgram(GLFWwindow* window)
 
     // Set default colour after clearing the colour buffer
     glClearColor(0.3f, 0.5f, 0.8f, 1.0f);
+
+    //gloom loading shaders, only vertex and fragment shaders
+    Gloom::Shader shader;
+    shader.makeBasicShader("../gloom/shaders/simple.vert", "../gloom/shaders/simple.frag");
+    
+    // Activate shader program
+    shader.activate();
+
 
     /*
     TASK 1
@@ -112,16 +127,6 @@ void runProgram(GLFWwindow* window)
 
 
 
-    //gloom loading shaders, only vertex and fragment shaders
-    Gloom::Shader shader;
-    shader.makeBasicShader("../gloom/shaders/simple.vert", "../gloom/shaders/simple.frag");
-    
-    // Activate shader program
-    shader.activate();
-
-
-
-
     // Rendering Loop
     while (!glfwWindowShouldClose(window))
     {
@@ -138,11 +143,18 @@ void runProgram(GLFWwindow* window)
         glm::mat4x4 CameraMovement = PerspectiveMatrix*Scale*RotateX*RotateY*Translate*TranslateNegativeZ;
         glUniformMatrix4fv(3,1,GL_FALSE, glm::value_ptr(CameraMovement));
 
-       
-        
+        //Draw the scene in order of the scene graph using the drawSceneNode function
         drawSceneNode(root, CameraMovement);
 
-        
+        // Handle other events
+        glfwPollEvents();
+        handleKeyboardInput(window);
+
+        // Flip buffers
+        glfwSwapBuffers(window);
+
+        printGLError();
+
       
     
 
@@ -164,22 +176,6 @@ void runProgram(GLFWwindow* window)
         glBindVertexArray(VAOhelicopterBody);
         glDrawElements(GL_TRIANGLES,lengthOfHelicopterBody , GL_UNSIGNED_INT,0);
     */
-        // Handle other events
-        glfwPollEvents();
-        handleKeyboardInput(window);
-
-        // Flip buffers
-        glfwSwapBuffers(window);
-
-
-
-
- 
-     
-       printGLError();
-
-
-    
 
     }
 
@@ -245,6 +241,7 @@ int createVertexArrayObject(std::vector<float> vertices, int vertex_size, std::v
         return arrayID;
 }
 
+//Function drawSceneNode() that iterates trough every child of the root, bind the VAO and draw it 
 void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix) {
     glBindVertexArray(root->vertexArrayObjectID);
     glDrawElements(GL_TRIANGLES,root->VAOIndexCount, GL_UNSIGNED_INT,0);
