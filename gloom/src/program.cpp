@@ -105,28 +105,6 @@ void runProgram(GLFWwindow* window)
     shader.activate();
 
 
-    /*
-    TASK 1
-    //Creates VAO for terrain
-    struct Mesh TerrainObj = loadTerrainMesh("../gloom/resources/lunarsurface.obj");
-    lengthOfTerrainObj = TerrainObj.indices.size();
-    int VAOterrain = createVertexArrayObject(TerrainObj.vertices, TerrainObj.vertices.size(), TerrainObj.indices, TerrainObj.indices.size(), TerrainObj.colours, TerrainObj.colours.size(), TerrainObj.normals, TerrainObj.normals.size());
-    // Task 1acreateVertexArrayObject(TerrainObj.vertices, TerrainObj.vertices.size(), TerrainObj.indices, TerrainObj.indices.size(), TerrainObj.colours, TerrainObj.colours.size());
-
-    //Creates VAOs for all the helicopter parts and stores the arrayID as an int, I will use to bind the VAO in the rendering loop
-    struct Helicopter HelicopterObj  = loadHelicopterModel("../gloom/resources/helicopter.obj");
-    //lengthOfHelicopterDoor = HelicopterObj.door.indices.size();
-    int VAOhelicopterDoor= createVertexArrayObject(HelicopterObj.door.vertices, HelicopterObj.door.vertices.size(), HelicopterObj.door.indices, HelicopterObj.door.indices.size(), HelicopterObj.door.colours, HelicopterObj.door.colours.size(), HelicopterObj.door.normals, HelicopterObj.door.normals.size());
-    lengthOfHelicopterBody = HelicopterObj.body.indices.size();
-    int VAOhelicopterBody = createVertexArrayObject(HelicopterObj.body.vertices, HelicopterObj.body.vertices.size(), HelicopterObj.body.indices, HelicopterObj.body.indices.size(), HelicopterObj.body.colours, HelicopterObj.body.colours.size(), HelicopterObj.body.normals, HelicopterObj.body.normals.size());
-    lengthOfHelicopterMainRoter = HelicopterObj.mainRotor.indices.size();
-    int VAOhelicopterMainRotor = createVertexArrayObject(HelicopterObj.mainRotor.vertices, HelicopterObj.mainRotor.vertices.size(), HelicopterObj.mainRotor.indices, HelicopterObj.mainRotor.indices.size(), HelicopterObj.mainRotor.colours, HelicopterObj.mainRotor.colours.size(), HelicopterObj.mainRotor.normals, HelicopterObj.mainRotor.normals.size());
-    lengthOfHelicopterTailRotor = HelicopterObj.tailRotor.indices.size();
-    int VAOhelicopterTailRotor = createVertexArrayObject(HelicopterObj.tailRotor.vertices, HelicopterObj.tailRotor.vertices.size(), HelicopterObj.tailRotor.indices, HelicopterObj.tailRotor.indices.size(), HelicopterObj.tailRotor.colours, HelicopterObj.tailRotor.colours.size(), HelicopterObj.tailRotor.normals, HelicopterObj.tailRotor.normals.size());
-*/
-
-
-
     // Rendering Loop
     while (!glfwWindowShouldClose(window))
     {
@@ -154,28 +132,6 @@ void runProgram(GLFWwindow* window)
         glfwSwapBuffers(window);
 
         printGLError();
-
-      
-    
-
-
-    /* Task 1d 
-        //Bind VAO og draw tarrain
-        glBindVertexArray(VAOterrain);
-        glDrawElements(GL_TRIANGLES,lengthOfTerrainObj , GL_UNSIGNED_INT,0);
-        //Bind VAO og draw main rotor
-        glBindVertexArray(VAOhelicopterMainRotor);
-        glDrawElements(GL_TRIANGLES,lengthOfHelicopterMainRoter, GL_UNSIGNED_INT,0);
-        //Bind VAO og draw door
-        glBindVertexArray(VAOhelicopterDoor);
-        glDrawElements(GL_TRIANGLES,lengthOfHelicopterDoor , GL_UNSIGNED_INT,0);
-        //Bind VAO og draw tail rotor
-        glBindVertexArray(VAOhelicopterTailRotor);
-        glDrawElements(GL_TRIANGLES,lengthOfHelicopterTailRotor , GL_UNSIGNED_INT,0);
-        //Bind VAO og draw body
-        glBindVertexArray(VAOhelicopterBody);
-        glDrawElements(GL_TRIANGLES,lengthOfHelicopterBody , GL_UNSIGNED_INT,0);
-    */
 
     }
 
@@ -249,7 +205,6 @@ void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix) {
         drawSceneNode(child, viewProjectionMatrix);
     }
 }
-
 
 
 
