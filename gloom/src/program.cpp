@@ -25,6 +25,13 @@ int createVertexArrayObject(std::vector<float> vertices, int vertex_size, std::v
 //Declaring the drawSceneNode function here, and defining it below. 
 void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix);
 
+//Declaring the visitSceneNode function here, and defining it below. 
+void visitSceneNode(SceneNode* node, glm::mat4 transformationThusFar);
+
+//Declaring the updateSceneNode function here, and defining it below. 
+void updateSceneNode(SceneNode* node, glm::mat4 transformationThusFar);
+
+
 
 //Motion variables - 4c 
 float Xmotion = 0.0f;
@@ -41,10 +48,12 @@ unsigned int lengthOfHelicopterDoor = 0;
 unsigned int lengthOfHelicopterTailRotor = 0; 
 unsigned int lengthOfHelicopterMainRoter = 0; 
 
+float testRotation = 0.0f;
 
 
 void runProgram(GLFWwindow* window)
 {
+
     //Creates the nodes og all the helicopter parts, terrain and a root
     SceneNode* root = createSceneNode(); 
     SceneNode* terrainNode = createSceneNode();
@@ -79,13 +88,30 @@ void runProgram(GLFWwindow* window)
     heliTailNode->vertexArrayObjectID = createVertexArrayObject(HelicopterObj.tailRotor.vertices, HelicopterObj.tailRotor.vertices.size(), HelicopterObj.tailRotor.indices, HelicopterObj.tailRotor.indices.size(), HelicopterObj.tailRotor.colours, HelicopterObj.tailRotor.colours.size(), HelicopterObj.tailRotor.normals, HelicopterObj.tailRotor.normals.size());
     heliTailNode->VAOIndexCount = HelicopterObj.tailRotor.indices.size();
 
+    heliTailNode->referencePoint = glm::vec3(0.35, 2.3, 10.4);
+    heliMainRotorNode->referencePoint = glm::vec3(0.0, 0.0, 0.0);
 
+
+    //To test rotation on heli body
+    heliBodyNode->rotation = glm::vec3(1, 1, 1);
+    //heliBodyNode->position = glm::vec3(1,2,3);
+    
+    
+    root->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
+    heliBodyNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
+    heliDoorNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
+    heliMainRotorNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
+    heliTailNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
+    
     printNode(root);
     printNode(terrainNode);
     printNode(heliBodyNode);
     printNode(heliTailNode);
     printNode(heliMainRotorNode);
     printNode(heliDoorNode);
+
+    
+
 
     // Enable depth (Z) buffer (accept "closest" fragment)
     glEnable(GL_DEPTH_TEST);
@@ -108,7 +134,13 @@ void runProgram(GLFWwindow* window)
     // Rendering Loop
     while (!glfwWindowShouldClose(window))
     {
-        // Clear colour and depth buffers
+
+        testRotation += 0.2; 
+        heliMainRotorNode->rotation = glm::vec3(0,1000*testRotation,0);
+        heliTailNode->rotation = glm::vec3(1000*testRotation,0,0);
+        heliBodyNode->position = glm::vec3(0,0,-testRotation*2);
+
+       // Clear colour and depth buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         //Transformations
@@ -119,8 +151,10 @@ void runProgram(GLFWwindow* window)
         glm::mat4x4 RotateY = glm::rotate(glm::radians(PanSide), glm::vec3(0,1,0)); 
         glm::mat4x4 Scale = glm::scale(glm::vec3(1,1,1));    
         glm::mat4x4 CameraMovement = PerspectiveMatrix*Scale*RotateX*RotateY*Translate*TranslateNegativeZ;
-        glUniformMatrix4fv(3,1,GL_FALSE, glm::value_ptr(CameraMovement));
+        //glUniformMatrix4fv(3,1,GL_FALSE, glm::value_ptr(CameraMovement));
 
+
+        updateSceneNode(root, root->currentTransformationMatrix);
         //Draw the scene in order of the scene graph using the drawSceneNode function
         drawSceneNode(root, CameraMovement);
 
@@ -130,8 +164,7 @@ void runProgram(GLFWwindow* window)
 
         // Flip buffers
         glfwSwapBuffers(window);
-
-        printGLError();
+        
 
     }
 
@@ -143,70 +176,53 @@ void runProgram(GLFWwindow* window)
 }
 
 
-//Function createVertexArrayObject()
-int createVertexArrayObject(std::vector<float> vertices, int vertex_size, std::vector<unsigned int> indices, int indices_size, std::vector<float> colour, int colour_size, std::vector<float> normal  ,int normal_size ){
-     //create new VAO and Binds the VAO
-        unsigned int arrayID;
-        glGenVertexArrays(1,&arrayID);
-        glBindVertexArray(arrayID);
-
-    //Create and Binds the VBO
-        unsigned int bufferID;
-        glGenBuffers(1,&bufferID);
-        glBindBuffer(GL_ARRAY_BUFFER,bufferID);        
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vertex_size, &vertices[0] , GL_STATIC_DRAW); //Transfer the data to the GPU
-        //glBufferData(GL_ARRAY_BUFFER, vertex_size, vertices, GL_STATIC_DRAW); 
-
-        //Vertex Attribute Pointer
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,0, 0 );
-
-        //Enable the Vertex Attribute
-        glEnableVertexAttribArray(0);
-
-        
-        //The index buffer
-        //Generate another buffer
-        unsigned int index_buffer;
-        glGenBuffers(1, &index_buffer);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,index_buffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*indices_size, &indices[0], GL_STATIC_DRAW); 
-
-        
-        //Colour VBO
-        unsigned int colour_bufferID;
-        glGenBuffers(1,&colour_bufferID);
-        glBindBuffer(GL_ARRAY_BUFFER,colour_bufferID);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*colour_size, &colour[0], GL_STATIC_DRAW); 
-
-        //Enable the Vertex Attribute
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE,0, 0);
-
-
-
-        //Normal VBO
-        unsigned int normal_bufferID;
-        glGenBuffers(1,&normal_bufferID);
-        glBindBuffer(GL_ARRAY_BUFFER,normal_bufferID);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*normal_size, &normal[0], GL_STATIC_DRAW); 
-
-        //Enable the Vertex Attribute
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,0, 0);
-
-        return arrayID;
-}
 
 //Function drawSceneNode() that iterates trough every child of the root, bind the VAO and draw it 
 void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix) {
+
+    glm::mat4x4 ModelViewProjectionMatrix = viewProjectionMatrix*(root->currentTransformationMatrix);
+    glUniformMatrix4fv(3,1,GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
+
+
     glBindVertexArray(root->vertexArrayObjectID);
     glDrawElements(GL_TRIANGLES,root->VAOIndexCount, GL_UNSIGNED_INT,0);
+    
+
+
     for (SceneNode* child : root->children) {
         drawSceneNode(child, viewProjectionMatrix);
     }
 }
 
 
+
+//Function traversing the scene graph 
+void updateSceneNode(SceneNode* node, glm::mat4 transformationThusFar) {
+    // Do transformation computations here
+    // Store matrix in the node's currentTransformationMatrix here
+  
+    //Translate first 
+    glm::mat4x4 TranslateTo = glm::translate(-(node->referencePoint));
+    //Rotations
+    glm::mat4 rotXMatrix = glm::rotate(glm::radians(node->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 rotYMatrix = glm::rotate(glm::radians(node->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotZMatrix = glm::rotate(glm::radians(node->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 rotMatrix = rotXMatrix * rotYMatrix * rotZMatrix;
+    //Translate back
+    glm::mat4x4 TranslateBack = glm::translate((node->referencePoint));
+    
+    glm::mat4x4 InternalTransformation = TranslateBack*rotMatrix*TranslateTo;
+    glm::mat4x4 Position = glm::translate(node->position);
+
+    node->currentTransformationMatrix = transformationThusFar*Position*InternalTransformation;
+    
+        for(SceneNode* child : node->children) {
+            updateSceneNode(child, node->currentTransformationMatrix);
+    }
+}
+
+
+  
 
 void handleKeyboardInput(GLFWwindow* window)
 {
@@ -270,4 +286,56 @@ void handleKeyboardInput(GLFWwindow* window)
         PanUpDown += 2.5; 
         //Pan down
     }
+}
+
+//Function createVertexArrayObject()
+int createVertexArrayObject(std::vector<float> vertices, int vertex_size, std::vector<unsigned int> indices, int indices_size, std::vector<float> colour, int colour_size, std::vector<float> normal  ,int normal_size ){
+     //create new VAO and Binds the VAO
+        unsigned int arrayID;
+        glGenVertexArrays(1,&arrayID);
+        glBindVertexArray(arrayID);
+
+    //Create and Binds the VBO
+        unsigned int bufferID;
+        glGenBuffers(1,&bufferID);
+        glBindBuffer(GL_ARRAY_BUFFER,bufferID);        
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vertex_size, &vertices[0] , GL_STATIC_DRAW); //Transfer the data to the GPU
+        //glBufferData(GL_ARRAY_BUFFER, vertex_size, vertices, GL_STATIC_DRAW); 
+
+        //Vertex Attribute Pointer
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,0, 0 );
+
+        //Enable the Vertex Attribute
+        glEnableVertexAttribArray(0);
+
+        
+        //The index buffer
+        //Generate another buffer
+        unsigned int index_buffer;
+        glGenBuffers(1, &index_buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,index_buffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*indices_size, &indices[0], GL_STATIC_DRAW); 
+
+        
+        //Colour VBO
+        unsigned int colour_bufferID;
+        glGenBuffers(1,&colour_bufferID);
+        glBindBuffer(GL_ARRAY_BUFFER,colour_bufferID);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*colour_size, &colour[0], GL_STATIC_DRAW); 
+
+        //Enable the Vertex Attribute
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE,0, 0);
+
+        //Normal VBO
+        unsigned int normal_bufferID;
+        glGenBuffers(1,&normal_bufferID);
+        glBindBuffer(GL_ARRAY_BUFFER,normal_bufferID);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*normal_size, &normal[0], GL_STATIC_DRAW); 
+
+        //Enable the Vertex Attribute
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,0, 0);
+
+        return arrayID;
 }
