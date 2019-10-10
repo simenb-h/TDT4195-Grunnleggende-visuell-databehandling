@@ -49,6 +49,12 @@ unsigned int lengthOfHelicopterTailRotor = 0;
 unsigned int lengthOfHelicopterMainRoter = 0; 
 
 float testRotation = 0.0f;
+float Zmovement = 0.0f;
+float Xmovement = 0.0f;
+float HeliRoll = 0.0f;
+float HeliYaw =  0.0f;
+float HeliPitch = 0.0f;
+
 
 
 void runProgram(GLFWwindow* window)
@@ -94,7 +100,7 @@ void runProgram(GLFWwindow* window)
 
     //To test rotation on heli body
     heliBodyNode->rotation = glm::vec3(1, 1, 1);
-    //heliBodyNode->position = glm::vec3(1,2,3);
+    //heliBodyNode->position = glm::vec3(1,1,-1);
     
     
     root->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
@@ -111,7 +117,7 @@ void runProgram(GLFWwindow* window)
     printNode(heliDoorNode);
 
     
-
+  
 
     // Enable depth (Z) buffer (accept "closest" fragment)
     glEnable(GL_DEPTH_TEST);
@@ -134,11 +140,20 @@ void runProgram(GLFWwindow* window)
     // Rendering Loop
     while (!glfwWindowShouldClose(window))
     {
-
-        testRotation += 0.2; 
+        
+        testRotation += getTimeDeltaSeconds();
+        Zmovement = simpleHeadingAnimation(testRotation).z;
+        Xmovement = simpleHeadingAnimation(testRotation).x;
+        HeliRoll = simpleHeadingAnimation(testRotation).roll;
+        HeliPitch = simpleHeadingAnimation(testRotation).pitch;
+        HeliYaw = simpleHeadingAnimation(testRotation).yaw;
         heliMainRotorNode->rotation = glm::vec3(0,1000*testRotation,0);
         heliTailNode->rotation = glm::vec3(1000*testRotation,0,0);
-        heliBodyNode->position = glm::vec3(0,0,-testRotation*2);
+        heliBodyNode->position = glm::vec3(Xmovement,0,Zmovement);
+        heliBodyNode->rotation = glm::vec3(HeliYaw,HeliPitch,HeliRoll);
+
+
+
 
        // Clear colour and depth buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -180,6 +195,7 @@ void runProgram(GLFWwindow* window)
 //Function drawSceneNode() that iterates trough every child of the root, bind the VAO and draw it 
 void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix) {
 
+   
     glm::mat4x4 ModelViewProjectionMatrix = viewProjectionMatrix*(root->currentTransformationMatrix);
     glUniformMatrix4fv(3,1,GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
 
@@ -187,7 +203,7 @@ void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix) {
     glBindVertexArray(root->vertexArrayObjectID);
     glDrawElements(GL_TRIANGLES,root->VAOIndexCount, GL_UNSIGNED_INT,0);
     
-
+  
 
     for (SceneNode* child : root->children) {
         drawSceneNode(child, viewProjectionMatrix);
@@ -211,10 +227,15 @@ void updateSceneNode(SceneNode* node, glm::mat4 transformationThusFar) {
     //Translate back
     glm::mat4x4 TranslateBack = glm::translate((node->referencePoint));
     
-    glm::mat4x4 InternalTransformation = TranslateBack*rotMatrix*TranslateTo;
     glm::mat4x4 Position = glm::translate(node->position);
+    glm::mat4x4 ModelMatrix = Position*TranslateBack*rotMatrix*TranslateTo;
 
-    node->currentTransformationMatrix = transformationThusFar*Position*InternalTransformation;
+    //4b 
+    glUniformMatrix4fv(4,1,GL_FALSE, glm::value_ptr(ModelMatrix));
+
+
+
+    node->currentTransformationMatrix = transformationThusFar*ModelMatrix;
     
         for(SceneNode* child : node->children) {
             updateSceneNode(child, node->currentTransformationMatrix);
