@@ -31,9 +31,7 @@ void visitSceneNode(SceneNode* node, glm::mat4 transformationThusFar);
 //Declaring the updateSceneNode function here, and defining it below. 
 void updateSceneNode(SceneNode* node, glm::mat4 transformationThusFar);
 
-
-
-//Motion variables - 4c 
+//Camera motion variables
 float Xmotion = 0.0f;
 float Ymotion = 0.0f;
 float Zmotion = 0.0f;
@@ -96,12 +94,6 @@ void runProgram(GLFWwindow* window)
     heliTailNode->VAOIndexCount = HelicopterObj.tailRotor.indices.size();
 
     heliTailNode->referencePoint = glm::vec3(0.35, 2.3, 10.4);
-    heliMainRotorNode->referencePoint = glm::vec3(0.0, 0.0, 0.0);
-
-
-
-
-
 
     //Set the currentTransformationMatrix for every node to the identity matrix 
     root->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
@@ -139,9 +131,11 @@ void runProgram(GLFWwindow* window)
     // Rendering Loop
     while (!glfwWindowShouldClose(window))
     {
+
         Time += getTimeDeltaSeconds();
         struct Heading heliHeading = simpleHeadingAnimation(Time);
 
+        //Change of nodes rotation and positions 
         Zmovement = heliHeading.z;
         Xmovement = heliHeading.x;
         HeliRoll = heliHeading.roll;
@@ -154,7 +148,6 @@ void runProgram(GLFWwindow* window)
         heliBodyNode->rotation.x = HeliPitch;
         heliBodyNode->rotation.y = HeliYaw;
         heliBodyNode->rotation.z = HeliRoll;
-
 
 
 
