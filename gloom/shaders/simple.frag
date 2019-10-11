@@ -15,8 +15,6 @@ vec3 vnormal = normalize(mat3(ModelMatrix) * normalVertex);
 
 void main()
 {
-
-    
     Outcolor = colourVertex*max(0.0f,dot(vnormal,-lightDirection));  
 }
 

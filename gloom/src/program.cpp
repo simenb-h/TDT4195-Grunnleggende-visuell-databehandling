@@ -40,7 +40,6 @@ float Zmotion = 0.0f;
 float PanSide = 0.0f;
 float PanUpDown = 0.0f; 
 
-
 //Indices length of terrain and helicopter parts mesh
 unsigned int lengthOfTerrainObj = 0; 
 unsigned int lengthOfHelicopterBody = 0; 
@@ -48,7 +47,8 @@ unsigned int lengthOfHelicopterDoor = 0;
 unsigned int lengthOfHelicopterTailRotor = 0; 
 unsigned int lengthOfHelicopterMainRoter = 0; 
 
-float testRotation = 0.0f;
+//Movement on parts of the scene
+float Time = 0.0f;
 float Zmovement = 0.0f;
 float Xmovement = 0.0f;
 float HeliRoll = 0.0f;
@@ -59,7 +59,6 @@ float HeliPitch = 0.0f;
 
 void runProgram(GLFWwindow* window)
 {
-
     //Creates the nodes og all the helicopter parts, terrain and a root
     SceneNode* root = createSceneNode(); 
     SceneNode* terrainNode = createSceneNode();
@@ -67,13 +66,15 @@ void runProgram(GLFWwindow* window)
     SceneNode* heliTailNode = createSceneNode();
     SceneNode* heliMainRotorNode = createSceneNode();
     SceneNode* heliDoorNode = createSceneNode();
-    
+
+
     //Add helicopter body as parent of the other parts, tarrain parent of helicopter body, and root parent of terrain
     addChild(root, terrainNode);
     addChild(terrainNode, heliBodyNode);
     addChild(heliBodyNode, heliDoorNode);
     addChild(heliBodyNode, heliTailNode);
     addChild(heliBodyNode, heliMainRotorNode);
+
 
    //Load terrain and set the VAO ID and VAOIndexCount for the terrain node 
     struct Mesh TerrainObj = loadTerrainMesh("../gloom/resources/lunarsurface.obj");
@@ -98,26 +99,24 @@ void runProgram(GLFWwindow* window)
     heliMainRotorNode->referencePoint = glm::vec3(0.0, 0.0, 0.0);
 
 
-    //To test rotation on heli body
-    heliBodyNode->rotation = glm::vec3(1, 1, 1);
-    //heliBodyNode->position = glm::vec3(1,1,-1);
-    
-    
+
+
+
+
+    //Set the currentTransformationMatrix for every node to the identity matrix 
     root->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
     heliBodyNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
     heliDoorNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
     heliMainRotorNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
     heliTailNode->currentTransformationMatrix = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
     
+    //Printing the nodes
     printNode(root);
     printNode(terrainNode);
     printNode(heliBodyNode);
     printNode(heliTailNode);
     printNode(heliMainRotorNode);
     printNode(heliDoorNode);
-
-    
-  
 
     // Enable depth (Z) buffer (accept "closest" fragment)
     glEnable(GL_DEPTH_TEST);
@@ -140,17 +139,21 @@ void runProgram(GLFWwindow* window)
     // Rendering Loop
     while (!glfwWindowShouldClose(window))
     {
-        
-        testRotation += getTimeDeltaSeconds();
-        Zmovement = simpleHeadingAnimation(testRotation).z;
-        Xmovement = simpleHeadingAnimation(testRotation).x;
-        HeliRoll = simpleHeadingAnimation(testRotation).roll;
-        HeliPitch = simpleHeadingAnimation(testRotation).pitch;
-        HeliYaw = simpleHeadingAnimation(testRotation).yaw;
-        heliMainRotorNode->rotation = glm::vec3(0,1000*testRotation,0);
-        heliTailNode->rotation = glm::vec3(1000*testRotation,0,0);
+        Time += getTimeDeltaSeconds();
+        struct Heading heliHeading = simpleHeadingAnimation(Time);
+
+        Zmovement = heliHeading.z;
+        Xmovement = heliHeading.x;
+        HeliRoll = heliHeading.roll;
+        HeliPitch = heliHeading.pitch;
+        HeliYaw = heliHeading.yaw;
+        heliMainRotorNode->rotation = glm::vec3(0,1000*Time,0);
+        heliTailNode->rotation = glm::vec3(1000*Time,0,0);
         heliBodyNode->position = glm::vec3(Xmovement,0,Zmovement);
-        heliBodyNode->rotation = glm::vec3(HeliYaw,HeliPitch,HeliRoll);
+        //heliBodyNode->rotation = glm::vec3(HeliPitch,HeliYaw,HeliRoll);
+        heliBodyNode->rotation.x = HeliPitch;
+        heliBodyNode->rotation.y = HeliYaw;
+        heliBodyNode->rotation.z = HeliRoll;
 
 
 
@@ -158,7 +161,7 @@ void runProgram(GLFWwindow* window)
        // Clear colour and depth buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        //Transformations
+        //Camera movement transformations
         glm::mat4x4 TranslateNegativeZ = glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(0,0,0,1));
         glm::mat4x4 PerspectiveMatrix = glm::perspective(glm::radians(35.0f), 16.0f / 9.0f, 1.0f, 1000.0f);
         glm::mat4x4 Translate = glm::translate(glm::vec3(Xmotion,Ymotion,Zmotion));
@@ -170,7 +173,7 @@ void runProgram(GLFWwindow* window)
 
 
         updateSceneNode(root, root->currentTransformationMatrix);
-        //Draw the scene in order of the scene graph using the drawSceneNode function
+
         drawSceneNode(root, CameraMovement);
 
         // Handle other events
@@ -195,55 +198,53 @@ void runProgram(GLFWwindow* window)
 //Function drawSceneNode() that iterates trough every child of the root, bind the VAO and draw it 
 void drawSceneNode(SceneNode* root, glm::mat4 viewProjectionMatrix) {
 
-   
     glm::mat4x4 ModelViewProjectionMatrix = viewProjectionMatrix*(root->currentTransformationMatrix);
+    //Sending the model view projection matrix to the vertex shader 
     glUniformMatrix4fv(3,1,GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
+    
+    //Sending the model matrix to the fragment shader
+    glUniformMatrix4fv(4,1,GL_FALSE, glm::value_ptr(root->currentTransformationMatrix));
 
-
+    //Bind and draw each node 
     glBindVertexArray(root->vertexArrayObjectID);
     glDrawElements(GL_TRIANGLES,root->VAOIndexCount, GL_UNSIGNED_INT,0);
     
-  
-
+    //Cal the same function for every child of the parent
     for (SceneNode* child : root->children) {
         drawSceneNode(child, viewProjectionMatrix);
     }
 }
 
 
-
 //Function traversing the scene graph 
 void updateSceneNode(SceneNode* node, glm::mat4 transformationThusFar) {
-    // Do transformation computations here
-    // Store matrix in the node's currentTransformationMatrix here
-  
-    //Translate first 
+ 
+    //Translate to origo 
     glm::mat4x4 TranslateTo = glm::translate(-(node->referencePoint));
-    //Rotations
+    //Rotate around origo
     glm::mat4 rotXMatrix = glm::rotate(glm::radians(node->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
     glm::mat4 rotYMatrix = glm::rotate(glm::radians(node->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 rotZMatrix = glm::rotate(glm::radians(node->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 rotMatrix = rotXMatrix * rotYMatrix * rotZMatrix;
-    //Translate back
+    //Translate back to startingpoint 
     glm::mat4x4 TranslateBack = glm::translate((node->referencePoint));
     
+    //Translation
     glm::mat4x4 Position = glm::translate(node->position);
+
+    //Combination of all of the transformations
     glm::mat4x4 ModelMatrix = Position*TranslateBack*rotMatrix*TranslateTo;
 
-    //4b 
-    glUniformMatrix4fv(4,1,GL_FALSE, glm::value_ptr(ModelMatrix));
 
-
-
+    //Set the currentTransformationMatrix for every node
     node->currentTransformationMatrix = transformationThusFar*ModelMatrix;
     
-        for(SceneNode* child : node->children) {
-            updateSceneNode(child, node->currentTransformationMatrix);
+    //Call the function for every child 
+    for(SceneNode* child : node->children) {
+        updateSceneNode(child, node->currentTransformationMatrix);
     }
 }
 
-
-  
 
 void handleKeyboardInput(GLFWwindow* window)
 {
